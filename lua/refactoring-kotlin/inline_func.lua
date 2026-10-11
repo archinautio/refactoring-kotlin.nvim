@@ -13,10 +13,17 @@ local function reindent(buf, first_row, end_row, indent_row)
       vim.cmd(("silent keepjumps normal! %dGV%dG="):format(first_row + 1, end_row))
       vim.fn.winrestview(view)
     else
-      local indent = vim.api.nvim_buf_get_lines(buf, indent_row, indent_row + 1, true)[1]:match("^%s*")
+      local indent = vim.api.nvim_buf_get_lines(buf, indent_row, indent_row + 1, true)[1]:match "^%s*"
       local lines = vim.api.nvim_buf_get_lines(buf, first_row, end_row, true)
-      vim.api.nvim_buf_set_lines(buf, first_row, end_row, true,
-        vim.tbl_map(function(line) return indent .. vim.trim(line) end, lines))
+      vim.api.nvim_buf_set_lines(
+        buf,
+        first_row,
+        end_row,
+        true,
+        vim.tbl_map(function(line)
+          return indent .. vim.trim(line)
+        end, lines)
+      )
     end
   end)
 end
@@ -26,13 +33,13 @@ end
 local function collapse_blank_lines(buf, row)
   if row == 0 then return end
   local around = vim.api.nvim_buf_get_lines(buf, row - 1, row + 1, false)
-  if #around == 2 and not around[1]:match("%S") and not around[2]:match("%S") then
+  if #around == 2 and not around[1]:match "%S" and not around[2]:match "%S" then
     vim.api.nvim_buf_set_lines(buf, row, row + 1, true, {})
   end
   local count = vim.api.nvim_buf_line_count(buf)
   if row >= count - 1 then
     local last = count
-    while last > 1 and not vim.api.nvim_buf_get_lines(buf, last - 1, last, true)[1]:match("%S") do
+    while last > 1 and not vim.api.nvim_buf_get_lines(buf, last - 1, last, true)[1]:match "%S" do
       last = last - 1
     end
     vim.api.nvim_buf_set_lines(buf, last, count, true, {})
@@ -40,7 +47,9 @@ local function collapse_blank_lines(buf, row)
 end
 
 local function without_blank_lines(lines)
-  return vim.tbl_filter(function(line) return line:match("%S") ~= nil end, lines)
+  return vim.tbl_filter(function(line)
+    return line:match "%S" ~= nil
+  end, lines)
 end
 
 -- Wraps `apply_text_edits` for inline_func's edits only:
@@ -71,15 +80,13 @@ function M.setup(opts)
   if installed then return end
   installed = true
 
-  local utils = require("refactoring.utils")
+  local utils = require "refactoring.utils"
   local apply_text_edits = utils.apply_text_edits
-  local ns = vim.api.nvim_create_namespace("refactoring-inline-func")
+  local ns = vim.api.nvim_create_namespace "refactoring-inline-func"
 
   utils.apply_text_edits = function(text_edits_by_buf)
     local caller = debug.getinfo(2, "S").source
-    if not caller:find("refactor/inline_func.lua", 1, true) then
-      return apply_text_edits(text_edits_by_buf)
-    end
+    if not caller:find("refactor/inline_func.lua", 1, true) then return apply_text_edits(text_edits_by_buf) end
     if not options.all_languages and not has_kotlin(text_edits_by_buf) then
       return apply_text_edits(text_edits_by_buf)
     end
@@ -87,7 +94,9 @@ function M.setup(opts)
     -- Kotlin: how to inline each call, worked out before any edit (one of them
     -- deletes the function). `false` for the calls that can't be inlined.
     local plans, reasons = require("refactoring-kotlin.kotlin").plan(text_edits_by_buf)
-    local skipped = plans and #vim.tbl_filter(function(plan) return plan == false end, vim.tbl_values(plans)) or 0
+    local skipped = plans and #vim.tbl_filter(function(plan)
+      return plan == false
+    end, vim.tbl_values(plans)) or 0
 
     for buf, text_edits in pairs(text_edits_by_buf) do
       -- Edits are anchored to extmarks so they can be applied top-down (the
@@ -101,7 +110,9 @@ function M.setup(opts)
         local pos = vim.api.nvim_buf_get_extmark_by_id(buf, ns, id, { details = true })
         return pos[1], pos[2], pos[3].end_row, pos[3].end_col
       end
-      table.sort(text_edits, function(a, b) return a.range < b.range end)
+      table.sort(text_edits, function(a, b)
+        return a.range < b.range
+      end)
       local marks, statement_marks = {}, {}
       for i, text_edit in ipairs(text_edits) do
         marks[i] = mark(text_edit.range:to_extmark())
@@ -117,7 +128,7 @@ function M.setup(opts)
           if skipped == 0 then
             -- Upstream starts at the function, after its indent: delete whole lines
             -- (otherwise the indent joins the next line, e.g. a class's `}`).
-            if not vim.api.nvim_buf_get_lines(buf, srow, srow + 1, true)[1]:sub(1, scol):match("%S") then scol = 0 end
+            if not vim.api.nvim_buf_get_lines(buf, srow, srow + 1, true)[1]:sub(1, scol):match "%S" then scol = 0 end
             vim.api.nvim_buf_set_text(buf, srow, scol, erow, ecol, {})
             collapse_blank_lines(buf, srow)
           end
@@ -125,7 +136,7 @@ function M.setup(opts)
           local lines = plan and plan.lines or text_edit.lines
           if #lines > 1 then lines = without_blank_lines(lines) end
           vim.api.nvim_buf_set_text(buf, srow, scol, erow, ecol, lines)
-          if #lines == 0 and not vim.api.nvim_buf_get_lines(buf, srow, srow + 1, true)[1]:match("%S") then
+          if #lines == 0 and not vim.api.nvim_buf_get_lines(buf, srow, srow + 1, true)[1]:match "%S" then
             -- Nothing left of the call (a pure function called as a statement).
             vim.api.nvim_buf_set_lines(buf, srow, srow + 1, true, {})
           elseif #lines > 1 then

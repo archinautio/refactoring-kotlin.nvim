@@ -45,15 +45,22 @@ local M = {}
 local UNKNOWN_TYPE = "P" -- placeholder when the type can't be read from the source (Java uses the same)
 
 local function identifiers(vars)
-  return vim.iter(vars):map(function(v) return v.identifier end):join(", ")
+  return vim
+    .iter(vars)
+    :map(function(v)
+      return v.identifier
+    end)
+    :join ", "
 end
 
 local function function_declaration(opts)
-  local args = vim.iter(opts.args)
-    :map(function(v) return ("%s: %s"):format(v.identifier, v.type or UNKNOWN_TYPE) end)
-    :join(", ")
-  local return_type = #opts.return_values == 0 and ""
-    or (": %s"):format(opts.return_values[1].type or UNKNOWN_TYPE)
+  local args = vim
+    .iter(opts.args)
+    :map(function(v)
+      return ("%s: %s"):format(v.identifier, v.type or UNKNOWN_TYPE)
+    end)
+    :join ", "
+  local return_type = #opts.return_values == 0 and "" or (": %s"):format(opts.return_values[1].type or UNKNOWN_TYPE)
   return ("private fun %s(%s)%s {\n%s\n}"):format(opts.name, args, return_type, opts.body)
 end
 
@@ -83,7 +90,7 @@ end
 local function assignment(opts)
   local named, positional = {}, {}
   for _, value in ipairs(opts.right) do
-    local name, named_value = value:match("^([%a_][%w_]*)%s*=%s*([^=].*)$")
+    local name, named_value = value:match "^([%a_][%w_]*)%s*=%s*([^=].*)$"
     if name then
       named[name] = named_value
     else
@@ -91,14 +98,15 @@ local function assignment(opts)
     end
   end
 
-  return vim.iter(ipairs(opts.left))
+  return vim
+    .iter(ipairs(opts.left))
     :map(function(i, name)
       local value = named[name] or positional[i] or "/* missing argument */"
       -- `f(a = a)`: the variable already exists (same skip upstream does for `f(a)`).
       if value == name then return nil end
       return ("val %s = %s"):format(name, value)
     end)
-    :join("\n")
+    :join "\n"
 end
 
 local function group_expression(opts)
@@ -229,7 +237,7 @@ end
 -- `x = "a"` or `x = 1` becomes `"a"` or `"1"`), or nil.
 local function template_text(node, buf)
   local value = text(node, buf)
-  if node:type() == "string_literal" and is_simple(node) and not value:match('^"""') then return value:sub(2, -2) end
+  if node:type() == "string_literal" and is_simple(node) and not value:match '^"""' then return value:sub(2, -2) end
   if node:type() == "integer_literal" or node:type() == "boolean_literal" then return value end
 end
 
@@ -327,7 +335,9 @@ end
 
 local function render(tpl, replace)
   local spots = vim.deepcopy(tpl.spots)
-  table.sort(spots, function(a, b) return a.s > b.s end)
+  table.sort(spots, function(a, b)
+    return a.s > b.s
+  end)
   local out = tpl.text
   for _, spot in ipairs(spots) do
     local replacement = replace(spot)
@@ -379,13 +389,15 @@ function M.analyze(buf, fn)
 
   -- Statements before the return value, and the return value.
   local statements, ret = {}, nil
-  local block = vim.iter(body:iter_children()):find(function(c) return c:type() == "statements" end)
+  local block = vim.iter(body:iter_children()):find(function(c)
+    return c:type() == "statements"
+  end)
   if block then
     for statement in block:iter_children() do
       if statement:named() then table.insert(statements, statement) end
     end
     local last = statements[#statements]
-    if last and last:type() == "jump_expression" and text(last, buf):match("^return%f[^%w_@]") then
+    if last and last:type() == "jump_expression" and text(last, buf):match "^return%f[^%w_@]" then
       table.remove(statements)
       ret = last:named_child(0)
     end
@@ -397,7 +409,7 @@ function M.analyze(buf, fn)
   for _, statement in ipairs(statements) do
     local early_return = false
     walk(statement, function(node)
-      if node:type() == "jump_expression" and text(node, buf):match("^return%f[^@]") then early_return = true end
+      if node:type() == "jump_expression" and text(node, buf):match "^return%f[^@]" then early_return = true end
     end)
     if early_return then return end
   end
@@ -406,7 +418,9 @@ function M.analyze(buf, fn)
   local locals = {}
   for _, statement in ipairs(statements) do
     if statement:type() == "property_declaration" then
-      local declaration = vim.iter(statement:iter_children()):find(function(c) return c:type() == "variable_declaration" end)
+      local declaration = vim.iter(statement:iter_children()):find(function(c)
+        return c:type() == "variable_declaration"
+      end)
       if declaration then
         local name = text(declaration:named_child(0), buf)
         locals[name] = true
@@ -422,9 +436,11 @@ function M.analyze(buf, fn)
   local function add_member(name_node, declaration)
     local name = text(name_node, buf)
     names[name] = names[name] or "member"
-    local modifiers = vim.iter(declaration:iter_children()):find(function(c) return c:type() == "modifiers" end)
+    local modifiers = vim.iter(declaration:iter_children()):find(function(c)
+      return c:type() == "modifiers"
+    end)
     local visibility = modifiers and text(modifiers, buf) or ""
-    if visibility:match("%f[%w]private%f[%W]") or visibility:match("%f[%w]protected%f[%W]") then
+    if visibility:match "%f[%w]private%f[%W]" or visibility:match "%f[%w]protected%f[%W]" then
       private_members[name] = true
     end
   end
@@ -433,29 +449,46 @@ function M.analyze(buf, fn)
     local class = class_body:parent()
     for member in class_body:iter_children() do
       if member:type() == "property_declaration" then
-        local declaration = vim.iter(member:iter_children()):find(function(c) return c:type() == "variable_declaration" end)
+        local declaration = vim.iter(member:iter_children()):find(function(c)
+          return c:type() == "variable_declaration"
+        end)
         if declaration then add_member(declaration:named_child(0), member) end
       elseif member:type() == "function_declaration" then
-        local name = vim.iter(member:iter_children()):find(function(c) return c:type() == "simple_identifier" end)
+        local name = vim.iter(member:iter_children()):find(function(c)
+          return c:type() == "simple_identifier"
+        end)
         if name then add_member(name, member) end
       end
     end
     -- `class Shop(val total: Int)`: constructor parameters with `val`/`var` are properties.
-    local constructor = vim.iter(class:iter_children()):find(function(c) return c:type() == "primary_constructor" end)
+    local constructor = vim.iter(class:iter_children()):find(function(c)
+      return c:type() == "primary_constructor"
+    end)
     if constructor then
       for parameter in constructor:iter_children() do
         local is_property = parameter:type() == "class_parameter"
-          and vim.iter(parameter:iter_children()):any(function(c) return c:type() == "binding_pattern_kind" end)
+          and vim.iter(parameter:iter_children()):any(function(c)
+            return c:type() == "binding_pattern_kind"
+          end)
         if is_property then
-          add_member(vim.iter(parameter:iter_children()):find(function(c) return c:type() == "simple_identifier" end), parameter)
+          add_member(
+            vim.iter(parameter:iter_children()):find(function(c)
+              return c:type() == "simple_identifier"
+            end),
+            parameter
+          )
         end
       end
     end
-    local class_name = vim.iter(class:iter_children()):find(function(c) return c:type() == "type_identifier" end)
+    local class_name = vim.iter(class:iter_children()):find(function(c)
+      return c:type() == "type_identifier"
+    end)
     receiver_type = class_name and text(class_name, buf) or "receiver"
   else
-    local receiver = vim.iter(fn:iter_children()):find(function(c) return c:type() == "receiver_type" end)
-    if receiver then receiver_type = text(receiver, buf):match("([%w_]+)%??$") or "receiver" end
+    local receiver = vim.iter(fn:iter_children()):find(function(c)
+      return c:type() == "receiver_type"
+    end)
+    if receiver then receiver_type = text(receiver, buf):match "([%w_]+)%??$" or "receiver" end
   end
 
   local function_info = {
@@ -466,11 +499,12 @@ function M.analyze(buf, fn)
     ret = ret and template(buf, ret, ret, names, body) or nil,
     -- Whether the return value can replace a nested call without parentheses.
     ret_type = ret and ret:type(),
-    ret_param = ret and ret:type() == "simple_identifier" and names[text(ret, buf)] == "param" and text(ret, buf) or nil,
+    ret_param = ret and ret:type() == "simple_identifier" and names[text(ret, buf)] == "param" and text(ret, buf)
+      or nil,
   }
 
   -- Private members used by the body.
-  for _, tpl in pairs({ body = function_info.body, ret = function_info.ret }) do
+  for _, tpl in pairs { body = function_info.body, ret = function_info.ret } do
     for _, spot in ipairs(tpl.spots) do
       if spot.kind == "member" and private_members[spot.name] then function_info.uses_private = true end
     end
@@ -508,8 +542,12 @@ function M.inline_call(fn, buf, range, taken_by_scope)
 
   local call, result, nested
   if node:type() == "property_declaration" then
-    local declaration = vim.iter(node:iter_children()):find(function(c) return c:type() == "variable_declaration" end)
-    call = vim.iter(node:iter_children()):find(function(c) return c:type() == "call_expression" end)
+    local declaration = vim.iter(node:iter_children()):find(function(c)
+      return c:type() == "variable_declaration"
+    end)
+    call = vim.iter(node:iter_children()):find(function(c)
+      return c:type() == "call_expression"
+    end)
     if not declaration or not call then return nil, "unsupported call" end
     result = text(declaration, buf)
   elseif node:type() == "call_expression" then
@@ -547,7 +585,7 @@ function M.inline_call(fn, buf, range, taken_by_scope)
   local callee = call:named_child(0)
   if callee:type() == "navigation_expression" then
     local receiver_node, member = callee:named_child(0), callee:named_child(1)
-    if text(member, buf):match("^%?%.") then return nil, "safe calls (`?.`) run conditionally" end
+    if text(member, buf):match "^%?%." then return nil, "safe calls (`?.`) run conditionally" end
     if not (receiver_node:type() == "this_expression" and text(receiver_node, buf) == "this") then
       if fn.uses_private then return nil, "the body uses private members" end
       receiver = {
@@ -561,7 +599,9 @@ function M.inline_call(fn, buf, range, taken_by_scope)
 
   -- Arguments: positional, named and the trailing lambda.
   local positional, named = {}, {}
-  local suffix = vim.iter(call:iter_children()):find(function(c) return c:type() == "call_suffix" end)
+  local suffix = vim.iter(call:iter_children()):find(function(c)
+    return c:type() == "call_suffix"
+  end)
   for part in suffix:iter_children() do
     if part:type() == "value_arguments" then
       for argument in part:iter_children() do
@@ -610,7 +650,7 @@ function M.inline_call(fn, buf, range, taken_by_scope)
 
   local function uses(name)
     local spots = {}
-    for _, tpl in pairs({ body = fn.body, ret = fn.ret }) do
+    for _, tpl in pairs { body = fn.body, ret = fn.ret } do
       for _, spot in ipairs(tpl.spots) do
         if spot.name == name and not spot.declaration then table.insert(spots, spot) end
       end
@@ -645,7 +685,7 @@ function M.inline_call(fn, buf, range, taken_by_scope)
   -- The receiver is used by `this` and the members the body uses.
   if receiver then
     receiver.uses = {}
-    for _, tpl in pairs({ body = fn.body, ret = fn.ret }) do
+    for _, tpl in pairs { body = fn.body, ret = fn.ret } do
       for _, spot in ipairs(tpl.spots) do
         if spot.kind == "this" or spot.kind == "member" then table.insert(receiver.uses, spot) end
       end
@@ -717,7 +757,7 @@ function M.inline_call(fn, buf, range, taken_by_scope)
     if replacement == spot.name then return nil end
     if spot.interpolated then
       if arg and arg.template_text then return arg.template_text end
-      return replacement:match("^[%a_][%w_]*$") and ("$" .. replacement) or ("${%s}"):format(replacement)
+      return replacement:match "^[%a_][%w_]*$" and ("$" .. replacement) or ("${%s}"):format(replacement)
     end
     if not arg then return replacement end
     if needs_parens(arg.type, spot.parent_type, spot.is_left) then return ("(%s)"):format(replacement) end
@@ -730,11 +770,12 @@ function M.inline_call(fn, buf, range, taken_by_scope)
     -- Moving code before the statement is only right if the call always runs,
     -- and possible if the statement starts its line (not `xs.map { f(it) }`).
     if #lines > 0 then
-      local reason = "its body can't be moved before the statement (conditional code, an expression body or a one-line lambda)"
+      local reason =
+        "its body can't be moved before the statement (conditional code, an expression body or a one-line lambda)"
       if conditional or not statement then return nil, reason end
       local row, col = statement:start()
       local line = vim.api.nvim_buf_get_lines(buf, row, row + 1, true)[1]
-      if line:sub(1, col):match("%S") then return nil, reason end
+      if line:sub(1, col):match "%S" then return nil, reason end
     end
     local value = fn.ret and render(fn.ret, replace) or "Unit"
     local value_type = fn.ret_param and args[fn.ret_param].type or fn.ret_type or "simple_identifier"

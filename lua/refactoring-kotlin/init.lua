@@ -30,7 +30,7 @@ local function add_code_generation()
   end
   local kotlin = { refactor = refactor }
 
-  local config = require("refactoring.config")
+  local config = require "refactoring.config"
   local get_config = config.get_config
   config.get_config = function(...)
     return vim.tbl_deep_extend("keep", get_config(...), kotlin)
@@ -41,7 +41,7 @@ end
 function M.setup(opts)
   opts = vim.tbl_extend("force", defaults, opts or {})
   add_code_generation()
-  require("refactoring-kotlin.inline_func").setup({ all_languages = opts.fix_inline_func_layout })
+  require("refactoring-kotlin.inline_func").setup { all_languages = opts.fix_inline_func_layout }
 end
 
 return M

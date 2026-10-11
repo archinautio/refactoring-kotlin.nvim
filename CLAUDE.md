@@ -19,6 +19,12 @@ Keep this repo minimal: it's what users install. The user documentation
 (supported and unsupported cases) lives in the tests repo's `docs/`, linked from
 `README.md`.
 
+## Formatting
+
+Format Lua with `stylua .` (`.stylua.toml` is refactoring.nvim's configuration,
+so code can be ported upstream as is: calls without parentheses, `require "x"`,
+`f { ... }`). The tests repo's `run.sh` checks it.
+
 ## Tests
 
 The test battery is a separate repo, `../refactoring-kotlin.nvim-tests`, so that
