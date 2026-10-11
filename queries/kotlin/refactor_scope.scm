@@ -1,5 +1,3 @@
-;; extends
-
 ; Kotlin scopes for refactoring.nvim (not bundled upstream).
 ; `@scope` is where a variable declared inside is visible, and `@scope.inside`
 ; the statements of its body. Used by extract function (to decide which variables

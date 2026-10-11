@@ -1,5 +1,3 @@
-;; extends
-
 ; Kotlin variable references for refactoring.nvim (not bundled upstream).
 ; Classifies every identifier as a declaration, a write or a read (with its type
 ; when it's written in the source). Used by extract function to compute the new

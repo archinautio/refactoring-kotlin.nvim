@@ -1,5 +1,3 @@
-;; extends
-
 ; Kotlin insertion points for extracted functions, for refactoring.nvim (not bundled upstream).
 ; Used by extract function: the new function is inserted above the function it
 ; comes from (and above that function's leading comments), at top level or inside

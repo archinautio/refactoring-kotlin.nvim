@@ -1,5 +1,3 @@
-;; extends
-
 ; Kotlin function calls for refactoring.nvim (not bundled upstream).
 ; Used by inline function: every call to the inlined function is replaced by its
 ; body. Captures the callee name, its arguments and, for `val x = f()`, the

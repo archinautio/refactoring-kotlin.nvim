@@ -69,8 +69,11 @@ precedence.
 ## How it works and compatibility
 
 - `queries/kotlin/refactor_*.scm` are the Tree-sitter queries refactoring.nvim
-  needs, found through 'runtimepath'. They use `;; extends`, so if
-  refactoring.nvim ever ships its own Kotlin queries, both are merged.
+  needs, found through 'runtimepath'. Like refactoring.nvim's own queries, they
+  don't use `;; extends`: Neovim uses the first `refactor_*.scm` for Kotlin on
+  'runtimepath'. To tweak one, add a query file starting with `;; extends` to
+  your config (`queries/kotlin/`). If refactoring.nvim ever ships its own Kotlin
+  queries, only one of the two sets is used, depending on 'runtimepath' order.
 - `setup()` adds the Kotlin code generators by wrapping
   `require("refactoring.config").get_config()`.
 - Inline function is patched by wrapping refactoring.nvim's internal

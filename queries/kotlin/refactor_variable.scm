@@ -1,5 +1,3 @@
-;; extends
-
 ; Kotlin variable declarations for refactoring.nvim (not bundled upstream).
 ; Used by inline variable: the value replaces every usage and the whole
 ; declaration is then removed. Separators aren't captured on purpose, so the
