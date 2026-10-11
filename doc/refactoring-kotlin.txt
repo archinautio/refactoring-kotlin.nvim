@@ -1,0 +1,41 @@
+*refactoring-kotlin.txt*  Kotlin support for refactoring.nvim
+
+==============================================================================
+CONTENTS                                          *refactoring-kotlin*
+
+Kotlin support for refactoring.nvim (https://github.com/ThePrimeagen/refactoring.nvim):
+extract function, extract variable, inline variable and an IDE-style inline
+function. What's supported and what isn't, with examples: `docs/` in the
+refactoring-kotlin.nvim-tests repo (see the README).
+
+Requirements: refactoring.nvim (and async.nvim on Neovim 0.12), the Kotlin
+Tree-sitter parser and, for inline variable/function, kotlin-lsp attached to
+Kotlin buffers.
+
+==============================================================================
+SETUP                                             *refactoring-kotlin.setup()*
+
+    require("refactoring").setup(opts)
+    require("refactoring-kotlin").setup({
+      fix_inline_func_layout = true,
+    })
+
+`setup()` can be called before or after refactoring.nvim's. Then use
+refactoring.nvim's functions (`extract_func()`, `extract_var()`,
+`inline_var()`, `inline_func()`) or its `:Refactor` command on Kotlin code.
+
+Options:
+
+`fix_inline_func_layout` (boolean, default `true`)
+    Also fix inline function's layout (indentation and blank lines) for the
+    other languages refactoring.nvim supports. Kotlin always gets it.
+
+==============================================================================
+COMPATIBILITY                                     *refactoring-kotlin-compat*
+
+Inline function is patched by wrapping refactoring.nvim's internal
+`refactoring.utils.apply_text_edits`. This depends on refactoring.nvim's
+internals: the tests run against a pinned commit of it (see the
+refactoring-kotlin.nvim-tests repo).
+
+ vim:tw=78:ts=8:ft=help:norl:
