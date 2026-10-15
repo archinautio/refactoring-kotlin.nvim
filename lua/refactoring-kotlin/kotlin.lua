@@ -117,6 +117,35 @@ local function variable_declaration(opts)
   return ("val %s = %s"):format(opts.name, opts.value)
 end
 
+-- Text inside a Kotlin string literal: `"` and `\` are escaped, and `$` too so
+-- that it isn't read as a template.
+local function string_content(text)
+  return (text:gsub('[\\"$]', "\\%0"))
+end
+
+-- `println("┆main#for┆ ╎price╎ ┊1┊: $price")`
+local function print_var(opts)
+  return ('println("%s %s %s: $%s")'):format(
+    string_content(opts.debug_path),
+    string_content(opts.identifier_str),
+    opts.count,
+    opts.identifier
+  )
+end
+
+local function print_loc(opts)
+  return ('println("%s %s")'):format(string_content(opts.debug_path), opts.count)
+end
+
+local function print_exp(opts)
+  return ('println("%s %s %s: ${%s}")'):format(
+    string_content(opts.debug_path),
+    string_content(opts.expression_str),
+    opts.count,
+    opts.expression
+  )
+end
+
 -- By refactor, in the shape of refactoring.nvim's `refactor.<name>.code_generation`.
 M.code_generation = {
   extract_func = {
@@ -133,6 +162,13 @@ M.code_generation = {
   inline_func = {
     assignment = { kotlin = assignment },
   },
+}
+
+-- By debug print, in the shape of refactoring.nvim's `debug.<name>.code_generation`.
+M.debug_code_generation = {
+  print_var = { print_var = { kotlin = print_var } },
+  print_loc = { print_loc = { kotlin = print_loc } },
+  print_exp = { print_exp = { kotlin = print_exp } },
 }
 
 -- Inline function -------------------------------------------------------------

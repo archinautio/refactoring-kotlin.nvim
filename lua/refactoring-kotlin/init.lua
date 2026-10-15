@@ -24,11 +24,15 @@ local function add_code_generation()
   if config_patched then return end
   config_patched = true
 
-  local refactor = {}
-  for name, code_generation in pairs(require("refactoring-kotlin.kotlin").code_generation) do
+  local kotlin_module = require "refactoring-kotlin.kotlin"
+  local refactor, debug_prints = {}, {}
+  for name, code_generation in pairs(kotlin_module.code_generation) do
     refactor[name] = { code_generation = code_generation }
   end
-  local kotlin = { refactor = refactor }
+  for name, code_generation in pairs(kotlin_module.debug_code_generation) do
+    debug_prints[name] = { code_generation = code_generation }
+  end
+  local kotlin = { refactor = refactor, debug = debug_prints }
 
   local config = require "refactoring.config"
   local get_config = config.get_config

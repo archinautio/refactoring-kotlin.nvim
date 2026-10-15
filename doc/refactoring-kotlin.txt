@@ -4,8 +4,8 @@
 CONTENTS                                          *refactoring-kotlin*
 
 Kotlin support for refactoring.nvim (https://github.com/ThePrimeagen/refactoring.nvim):
-extract function, extract variable, inline variable and an IDE-style inline
-function. What's supported and what isn't, with examples: `docs/` in the
+extract function, extract variable, inline variable, an IDE-style inline
+function and the debug prints. What's supported and what isn't, with examples: `docs/` in the
 refactoring-kotlin.nvim-tests repo (see the README).
 
 Requirements: refactoring.nvim (and async.nvim on Neovim 0.12), the Kotlin
@@ -22,7 +22,9 @@ SETUP                                             *refactoring-kotlin.setup()*
 
 `setup()` can be called before or after refactoring.nvim's. Then use
 refactoring.nvim's functions (`extract_func()`, `extract_var()`,
-`inline_var()`, `inline_func()`) or its `:Refactor` command on Kotlin code.
+`inline_var()`, `inline_func()`), its `:Refactor` command or its debug prints
+(`require("refactoring.debug")`: `print_var()`, `print_exp()`, `print_loc()`,
+`cleanup()`) on Kotlin code.
 
 Options:
 

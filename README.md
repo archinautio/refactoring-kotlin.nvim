@@ -10,6 +10,8 @@ only supports rename, so this fills the gap:
   that keeps the behaviour. It handles named and default arguments, calls nested
   in expressions, method calls (`obj.f()`, `this`, members), extension functions
   and name clashes.
+- **Debug prints**: refactoring.nvim's `print_var`, `print_exp`, `print_loc`
+  and `cleanup`.
 
 > [!NOTE]
 > **Documentation:** what's supported and what isn't, with examples, is in the
